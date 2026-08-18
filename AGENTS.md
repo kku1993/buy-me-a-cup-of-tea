@@ -22,10 +22,16 @@ turbo monorepo.
 
 ```sh
 npm install            # install all workspaces
+npm run dev            # start backend + demo-web + package watch (turbo)
 npm run build          # turbo build (all workspaces)
 npm run lint           # eslint across workspaces
 npm run format         # prettier
 ```
+
+`npm run dev` runs all dev tasks in parallel via turbo: the Go backend
+(`:8787`), the Vite demo (`:5173`), and the package watch build. The Go
+backend auto-loads `apps/backend/.env`; the Vite dev server proxies
+`/v1` → `:8787`.
 
 Per-package (run inside the workspace dir):
 
@@ -106,7 +112,9 @@ minor-unit conversion by construction — keep them in sync when adding a
 currency. `automatic_payment methods: enabled` is set on the
 PaymentIntent so the Stripe `PaymentElement` renders. CORS is
 configurable via `ALLOWED_ORIGIN`. Env: `STRIPE_SECRET_KEY` (required),
-`PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`).
+`PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`). The backend
+auto-loads `apps/backend/.env` at startup (existing env vars win), so
+`go run .` / `npm run dev` pick up keys without a wrapper script.
 
 ## Core invariants (do not break)
 

@@ -135,24 +135,26 @@ minor units. The reference Go backend lives in `apps/backend`.
    - `apps/demo-web/.env` → `VITE_STRIPE_PUBLIC_KEY=pk_test_...`
    - `apps/backend/.env` → `STRIPE_SECRET_KEY=sk_test_...`
 
-2. Start the backend:
+2. Start everything (the Go backend loads `apps/backend/.env` automatically;
+   the Vite dev server proxies `/v1` → `:8787`):
 
    ```sh
-   cd apps/backend && go run .
-   # listens on :8787
+   npm run dev
    ```
 
-3. Start the demo (the Vite proxy forwards `/v1` → `:8787`):
+   This runs all dev tasks in parallel via turbo:
 
-   ```sh
-   cd apps/demo-web && npx vite
-   # http://localhost:5173
-   ```
+   - `backend` → Go server on `http://localhost:8787`
+   - `demo-web` → Vite dev server on `http://localhost:5173`
+   - `@repo/donation-dialog` → watch build of the package
+
+   Open `http://localhost:5173`.
 
 ## Commands
 
 ```sh
 npm install            # install all workspaces
+npm run dev            # start backend + demo-web + package watch (turbo)
 npm run build          # build all packages/apps (turbo)
 npm run lint           # eslint across workspaces
 npm run format         # prettier

@@ -19,6 +19,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"log"
@@ -31,6 +32,47 @@ import (
 	stripe "github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/paymentintent"
 )
+
+// loadDotEnv reads a `.env` file from the working directory and sets any
+// unset environment variables from it. Existing env vars win (so explicit
+// shell exports / container env take precedence). Lines starting with `#`
+// and blank lines are ignored. Values may be wrapped in matching single or
+// double quotes (the quotes are stripped). This lets `go run .` pick up the
+// `apps/backend/.env` file the README tells users to create, without a
+// separate env-loader tool or a wrapper script.
+func loadDotEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		// Missing .env is fine — fall back to the real environment.
+		return
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		if len(value) >= 2 {
+			first, last := value[0], value[len(value)-1]
+			if (first == '"' && last == '"') || (first == '\'' && last == '\'') {
+				value = value[1 : len(value)-1]
+			}
+		}
+		// Don't override an existing env var.
+		if _, set := os.LookupEnv(key); set {
+			continue
+		}
+		os.Setenv(key, value)
+	}
+}
 
 // currencyConfig mirrors @repo/donation-dialog's currency table. Both sides
 // must agree on the per-currency exponent — a mismatch here silently
@@ -176,6 +218,11 @@ func cors(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Load `.env` from the working directory so `go run .` (and the
+	// `npm run dev` task) pick up STRIPE_SECRET_KEY / PORT / ALLOWED_ORIGIN
+	// without a wrapper script. Real env vars take precedence.
+	loadDotEnv(".env")
+
 	secretKey := os.Getenv("STRIPE_SECRET_KEY")
 	if secretKey == "" {
 		log.Fatal("STRIPE_SECRET_KEY environment variable is required")
