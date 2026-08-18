@@ -13,7 +13,7 @@
 // Configure with environment variables:
 //
 //	STRIPE_SECRET_KEY   (required) sk_test_... / sk_live_...
-//	PORT                (optional, default 8787)
+//	PORT                (optional, default 8888)
 //	ALLOWED_ORIGIN      (optional, default "*" — set to your frontend origin
 //	                    in production to lock down CORS)
 package main
@@ -231,7 +231,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8787"
+		port = "8888"
 	}
 
 	mux := http.NewServeMux()

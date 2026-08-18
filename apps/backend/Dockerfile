@@ -20,7 +20,7 @@ RUN go build -ldflags="-s -w -extldflags=-static" -o /out/backend .
 
 # Runtime stage — just the static binary + CA bundle on an empty
 # filesystem. `scratch` has no shell, no libc, no package manager — the
-# smallest possible image. The binary listens on :8787 by default
+# smallest possible image. The binary listens on :8888 by default
 # (PORT env).
 #
 # The CA cert bundle is required: the binary makes outbound HTTPS calls
@@ -40,6 +40,6 @@ COPY --from=build /out/backend /backend
 # the kernel honors without a passwd entry.
 USER 65532:65532
 
-EXPOSE 8787
+EXPOSE 8888
 
 ENTRYPOINT ["/backend"]
