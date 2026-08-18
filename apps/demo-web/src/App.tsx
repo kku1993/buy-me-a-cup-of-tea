@@ -9,7 +9,7 @@ import {
   TeaCupIcon,
   type DonationCurrencyConfig,
   type LocaleCode,
-} from "@repo/donation-dialog";
+} from "@kku1993/buy-me-a-cup-of-tea";
 
 // Configure the donation runtime once at module load.
 // - `apiOrigin` is the Go backend that mints Stripe PaymentIntents. In dev
@@ -106,8 +106,9 @@ export function App() {
         </span>
         <h1>Buy me a cup of tea</h1>
         <p className="page-tagline">
-          A demo of the <code>@repo/donation-dialog</code> standalone React
-          component, wired to a Go backend that mints Stripe PaymentIntents.
+          A demo of the <code>@kku1993/buy-me-a-cup-of-tea</code> standalone
+          React component, wired to a Go backend that mints Stripe
+          PaymentIntents.
         </p>
       </header>
 
@@ -212,7 +213,7 @@ export function App() {
       </section>
 
       <footer className="page-footer">
-        <span>Built with @repo/donation-dialog</span>
+        <span>Built with @kku1993/buy-me-a-cup-of-tea</span>
       </footer>
     </main>
   );

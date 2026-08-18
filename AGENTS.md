@@ -47,6 +47,21 @@ Go backend:
 cd apps/backend && go build ./... && go vet ./... && gofmt -l .
 ```
 
+Publishing `@kku1993/buy-me-a-cup-of-tea` (run from the package dir):
+
+```sh
+cd packages/donation-dialog
+npm login              # once, if not already logged in to npmjs.org
+npm version patch      # bumps version + tags git release (or minor/major)
+npm publish            # prepublishOnly runs check-types + lint + build first
+```
+
+`prepublishOnly` guards the publish: it runs `check-types`, `lint`, and
+`build` before npm packs the tarball, so a broken build can't ship. The
+package is scoped + `publishConfig.access: "public"`, so it publishes
+publicly under the `@kku1993` scope. Verify with `npm publish --dry-run`
+or `npm pack` first.
+
 ## Operation notes
 
 - Always run `tsc --noEmit`, `eslint`, and `vite build` for any TS
@@ -84,8 +99,10 @@ intent`), `formatAmount`, `detectCurrencyFromTimezone`, `DonationError`.
 - `src/styles.css` — self-contained dark-theme stylesheet, all classes
   `dd-`-prefixed to avoid host collisions.
 - `vite.config.ts` — library-mode build (React/Stripe externalized) for
-  publishing; `exports` point to source TS so the demo consumes it
-  directly through Vite.
+  publishing; `exports`/`main`/`types` point to `dist/` so both the
+  published package and the demo consume the built output. The `dev`
+  script (`vite build --watch`) rebuilds `dist/` on source change so
+  `npm run dev` keeps the demo in sync.
 
 ### `apps/demo-web`
 
@@ -169,9 +186,15 @@ copies the CA bundle so Stripe TLS works; runs as UID 65532).
 
 ## Gotchas
 
-- The package's `exports` point to **source TS** (not `dist/`) so the
-  demo consumes it directly through Vite. The `vite build` script still
-  emits `dist/` for publishing — don't delete the build config.
+- The package's `exports`/`main`/`types` point to **`dist/`** (not
+  source TS), so the published package and the demo both consume the
+  built output. `npm run dev` runs the package's `vite build --watch`
+  in parallel via turbo so editing package source rebuilds `dist/` and
+  the demo picks it up. npm's `publishConfig` does **not** override
+  `main`/`exports`/`types` (only `.npmrc` fields like `access`/`tag`/
+  `registry`) — that override is a pnpm-only feature — so the dist
+  paths must live at the top level. Don't repoint them back at `src/`
+  or consumers will try to import raw TypeScript.
 - `@types/react` must be a single version across the monorepo. If you
   see "ReactNode is not assignable to ReactNode" type errors, it's a
   dual-`@types/react` problem — align the versions and reinstall.

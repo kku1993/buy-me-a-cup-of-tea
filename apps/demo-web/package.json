@@ -11,7 +11,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/donation-dialog": "*",
+    "@kku1993/buy-me-a-cup-of-tea": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
