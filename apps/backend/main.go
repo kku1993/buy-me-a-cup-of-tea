@@ -13,6 +13,8 @@
 // Configure with environment variables:
 //
 //	STRIPE_SECRET_KEY   (required) sk_test_... / sk_live_...
+//	STRIPE_ACCOUNT_ID   (optional) connected account ID for Stripe Connect
+//	                    platforms; leave unset for a standalone account
 //	PORT                (optional, default 8888)
 //	ALLOWED_ORIGIN      (optional, default "*" — set to your frontend origin
 //	                    in production to lock down CORS)
@@ -177,7 +179,13 @@ func handlePaymentIntent(w http.ResponseWriter, r *http.Request) {
 			Enabled: stripe.Bool(true),
 		},
 	}
-	params.SetStripeAccount("")
+	// Stripe Connect platforms act on behalf of a connected account by
+	// setting the Stripe-Account header. For a standalone (non-Connect)
+	// account this must NOT be set — an empty value makes Stripe reject
+	// the request with account_invalid (403). Opt in via STRIPE_ACCOUNT_ID.
+	if accountID := os.Getenv("STRIPE_ACCOUNT_ID"); accountID != "" {
+		params.SetStripeAccount(accountID)
+	}
 
 	pi, err := paymentintent.New(params)
 	if err != nil {

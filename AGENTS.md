@@ -129,6 +129,8 @@ minor-unit conversion by construction — keep them in sync when adding a
 currency. `automatic_payment methods: enabled` is set on the
 PaymentIntent so the Stripe `PaymentElement` renders. CORS is
 configurable via `ALLOWED_ORIGIN`. Env: `STRIPE_SECRET_KEY` (required),
+`STRIPE_ACCOUNT_ID` (optional — only for Stripe Connect platforms acting
+on behalf of a connected account; leave unset for a standalone account),
 `PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`). The backend
 auto-loads `apps/backend/.env` at startup (existing env vars win), so
 `go run .` / `npm run dev` pick up keys without a wrapper script. Ships
@@ -180,8 +182,8 @@ copies the CA bundle so Stripe TLS works; runs as UID 65532).
 ## Environment
 
 - `apps/demo-web/.env` → `VITE_STRIPE_PUBLIC_KEY` (browser-safe).
-- `apps/backend/.env` → `STRIPE_SECRET_KEY` (server only), `PORT`,
-  `ALLOWED_ORIGIN`.
+- `apps/backend/.env` → `STRIPE_SECRET_KEY` (server only),
+  `STRIPE_ACCOUNT_ID` (optional, Connect only), `PORT`, `ALLOWED_ORIGIN`.
 - Both have `.env.example` files with placeholder values.
 
 ## Gotchas
