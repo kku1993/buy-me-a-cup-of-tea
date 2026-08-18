@@ -1,33 +1,172 @@
-# `Turborepo` Vite starter
+# buy-me-a-cup-of-tea
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+A standalone, drop-in "Buy me a cup of tea" donation dialog for React, with
+built-in Stripe Elements integration, multi-currency support, and i18n for
+seven locales. Backed by a tiny Go server that mints Stripe PaymentIntents.
 
-## Using this example
+## Repository layout
 
-Run the following command:
+| Path                         | What it is                                                       |
+| ---------------------------- | ---------------------------------------------------------------- |
+| `packages/donation-dialog`   | The standalone React component (`@repo/donation-dialog`).        |
+| `apps/demo-web`              | Vite + React demo that showcases the dialog.                     |
+| `apps/backend`               | Go backend (`net/http` + `stripe-go`) that mints PaymentIntents. |
+| `packages/eslint-config`     | Shared ESLint config.                                            |
+| `packages/typescript-config` | Shared tsconfig bases.                                           |
+
+## Quick start (client)
 
 ```sh
-npx create-turbo@latest -e with-vite
+npm install
 ```
 
-## What's inside?
+Configure the donation runtime once at app boot, then render the button:
 
-This Turborepo includes the following packages and apps:
+```tsx
+import { configureDonation, DonateButton } from "@repo/donation-dialog";
 
-### Apps and Packages
+configureDonation({
+  // Origin of the backend that mints PaymentIntents. Empty string = same
+  // origin (use a proxy in dev). For a deployed build set the absolute URL.
+  apiOrigin: "",
+  // Stripe publishable key (safe for the browser). When unset the dialog
+  // shows an "unavailable" state instead of crashing.
+  stripePublishableKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY,
+});
 
-- `docs`: a vanilla [vite](https://vitejs.dev) ts app
-- `web`: another vanilla [vite](https://vitejs.dev) ts app
-- `@repo/ui`: a stub component & utility library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: shared `eslint` configurations
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+export function App() {
+  return <DonateButton />;
+}
+```
 
-Each package and app is 100% [TypeScript](https://www.typescriptlang.org/).
+The dialog handles the rest: currency selection (auto-detected from the
+browser timezone), preset and custom amounts, Stripe Elements card entry,
+and a success screen.
 
-### Utilities
+### Props
 
-This Turborepo has some additional tools already setup for you:
+`DonateButton` accepts:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+| Prop        | Type                       | Default     | Notes                                                                |
+| ----------- | -------------------------- | ----------- | -------------------------------------------------------------------- |
+| `locale`    | `string`                   | auto-detect | Locale code (`"es"`, `"zh-Hant"`, or a custom code). Omit to detect. |
+| `strings`   | `Partial<DonationStrings>` | —           | Per-render overrides merged on top of the resolved locale.           |
+| `variant`   | `ButtonVariant`            | `"outline"` | `default` / `outline` / `ghost` / `destructive` / link variants.     |
+| `size`      | `ButtonSize`               | `"default"` | `default` / `sm` / `icon` / `icon-sm`.                               |
+| `iconOnly`  | `boolean`                  | `false`     | Hide the text label, show only the tea icon.                         |
+| `className` | `string`                   | —           | Extra class on the trigger button.                                   |
+
+## i18n
+
+Seven locales ship built-in: **en, es, fr, de, it, zh-Hans, zh-Hant**.
+Leave `locale` unset to auto-detect from the browser language (the zh-Hans /
+zh-Hant split is handled via script and region subtags).
+
+### Override individual strings (per render)
+
+```tsx
+<DonateButton strings={{ button: "Support this project 💛" }} />
+```
+
+Only the keys you supply are replaced; the rest come from the resolved
+locale. Template placeholders `{min}`, `{max}`, `{amount}`, `{currency}`
+are substituted at render time.
+
+### Add a new locale or replace a bundled one (app-wide)
+
+```tsx
+import { registerLocale, DonateButton } from "@repo/donation-dialog";
+
+registerLocale("ja", {
+  button: "お茶を一杯おごってください",
+  title: "お茶を一杯おごってください",
+  /* ...all 20 keys... */
+});
+
+// then:
+<DonateButton locale="ja" />;
+```
+
+`registerLocale` with a bundled code replaces it everywhere; with a new
+code it adds it. Resolution order is: `strings` prop > registered locale >
+bundled locale > English.
+
+## Currencies
+
+Supported: USD, TWD, CNY, HKD, EUR, GBP, JPY. Each has Stripe minor-unit
+exponents, display-decimal overrides (TWD charges in 2 decimals but
+displays in 0), min/max bounds, and three preset amounts. The table is the
+single source of truth shared with the backend — see
+`packages/donation-dialog/src/currency.ts`.
+
+## Backend contract
+
+The dialog POSTs to `${apiOrigin}/v1/donations/payment-intent`:
+
+```http
+POST /v1/donations/payment-intent
+content-type: application/json
+
+{"amount": 5, "currency": "USD"}
+```
+
+```http
+200 OK
+{"data": {"clientSecret": "pi_..._secret_..."}}
+```
+
+```http
+400 Bad Request
+{"message": "Amount must be at least $0.50 USD"}
+```
+
+`amount` is in major units (dollars/yen); the backend converts to Stripe
+minor units. The reference Go backend lives in `apps/backend`.
+
+## Running the demo locally
+
+1. Copy env files and fill in your Stripe keys:
+
+   ```sh
+   cp apps/demo-web/.env.example apps/demo-web/.env
+   cp apps/backend/.env.example apps/backend/.env
+   ```
+
+   - `apps/demo-web/.env` → `VITE_STRIPE_PUBLIC_KEY=pk_test_...`
+   - `apps/backend/.env` → `STRIPE_SECRET_KEY=sk_test_...`
+
+2. Start the backend:
+
+   ```sh
+   cd apps/backend && go run .
+   # listens on :8787
+   ```
+
+3. Start the demo (the Vite proxy forwards `/v1` → `:8787`):
+
+   ```sh
+   cd apps/demo-web && npx vite
+   # http://localhost:5173
+   ```
+
+## Commands
+
+```sh
+npm install            # install all workspaces
+npm run build          # build all packages/apps (turbo)
+npm run lint           # eslint across workspaces
+npm run format         # prettier
+```
+
+Per-package (run inside the workspace):
+
+```sh
+npx tsc --noEmit       # typecheck
+npx vite build         # build the package/app
+```
+
+Go backend:
+
+```sh
+cd apps/backend && go build ./... && go vet ./...
+```
