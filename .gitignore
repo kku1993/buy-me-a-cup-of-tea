@@ -13,3 +13,5 @@ public/dist
 # Go build artifacts
 apps/backend/backend
 apps/backend/*.exe
+
+packages/donation-dialog/vite.config.ts.timestamp-*.mjs
