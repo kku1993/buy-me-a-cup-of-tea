@@ -89,6 +89,41 @@ code {
   margin: 1.25rem 0 0.5rem;
 }
 
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.78);
+}
+.field-row > span:first-child {
+  flex-shrink: 0;
+  width: 4.5rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+.select {
+  flex: 1;
+  padding: 0.5em 0.7em;
+  background-color: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.select:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
+}
+.field-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #646cff;
+}
+
 .hint {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.5);

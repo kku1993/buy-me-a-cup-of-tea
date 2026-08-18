@@ -120,12 +120,18 @@ function CheckoutForm({
 
 function DonateDialogContent({
   onClose,
+  locale,
   strings: stringsOverride,
 }: {
   onClose: () => void;
+  /** Locale code (e.g. `"es"`, `"zh-Hant"`, or a custom code registered
+   *  via `registerLocale`). Omit to auto-detect from the browser
+   *  language. */
+  locale?: string;
+  /** Per-render overrides merged on top of the resolved locale's bundle. */
   strings?: Partial<DonationStrings>;
 }) {
-  const strings = resolveStrings(stringsOverride);
+  const strings = resolveStrings({ locale, strings: stringsOverride });
   const [step, setStep] = useState<Step>({ kind: "amount" });
   const [currencyCode, setCurrencyCode] = useState(() =>
     detectCurrencyFromTimezone(),
@@ -317,8 +323,13 @@ export interface DonateButtonProps {
   /** Hides the text label, showing only the tea icon (for tight spots
    *  like a footer). */
   iconOnly?: boolean;
-  /** Optional copy overrides; only the keys you supply replace the
-   *  built-in English defaults. */
+  /** Locale code (e.g. `"es"`, `"zh-Hant"`, or a custom code registered
+   *  via `registerLocale`). Omit to auto-detect from the browser
+   *  language. */
+  locale?: string;
+  /** Per-render overrides merged on top of the resolved locale's bundle.
+   *  Only the keys you supply are replaced; the rest come from the locale
+   *  (or the English fallback). */
   strings?: Partial<DonationStrings>;
 }
 
@@ -327,11 +338,12 @@ export function DonateButton({
   size,
   className,
   iconOnly,
+  locale,
   strings,
 }: DonateButtonProps) {
   const [open, setOpen] = useState(false);
 
-  const resolved = resolveStrings(strings);
+  const resolved = resolveStrings({ locale, strings });
 
   return (
     <>
@@ -350,6 +362,7 @@ export function DonateButton({
         <DialogContent showClose className="dd-donate-dialog">
           <DonateDialogContent
             onClose={() => setOpen(false)}
+            locale={locale}
             strings={strings}
           />
         </DialogContent>

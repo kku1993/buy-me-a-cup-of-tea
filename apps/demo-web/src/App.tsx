@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  BUNDLED_LOCALES,
   configureDonation,
+  detectLocale,
   DonateButton,
   DONATION_CURRENCIES,
+  registerLocale,
   TeaCupIcon,
   type DonationCurrencyConfig,
+  type LocaleCode,
 } from "@repo/donation-dialog";
 
 // Configure the donation runtime once at module load.
@@ -21,16 +25,78 @@ configureDonation({
     string | undefined,
 });
 
+// Demonstrate `registerLocale`: add a locale the package doesn't ship
+// (Pirate English) so the "support another language" path is live in the
+// demo. Pick it from the locale dropdown below to see it in the dialog.
+registerLocale("xx-pirate", {
+  button: "Buy me a cup o' tea, matey",
+  title: "Buy me a cup o' tea, matey",
+  description:
+    "If ye enjoyed this, consider buyin' me a cup o' tea. Every cup keeps me brewin'. Ye have me thanks!",
+  unavailable: "Donations be unavailable right now. Try again later, matey.",
+  currencyLabel: "Doubloons",
+  presetOne: "A sip",
+  presetThree: "A cup",
+  presetFive: "A whole pot",
+  customLabel: "Yer own amount ({currency})",
+  customPlaceholder: "Enter amount",
+  continue: "Onward",
+  invalidAmount: "Amount must be between {min} and {max}.",
+  error: "Somethin' went wrong. Try again.",
+  payTitle: "Hand over {amount}",
+  pay: "Hand over {amount}",
+  processing: "Brewin'…",
+  back: "Aft",
+  thankYouTitle: "Ye have me thanks!",
+  thankYouBody: "Yer cup o' tea be on its way. I appreciate the support!",
+  close: "Shut it",
+});
+
 const supportedCurrencies = DONATION_CURRENCIES.map(
   (c: DonationCurrencyConfig) => c.code,
 ).join(", ");
 
+// Bundled locales + the custom one registered above, for the dropdown.
+const LOCALE_OPTIONS: { value: string; label: string }[] = [
+  ...Object.keys(BUNDLED_LOCALES).map((code) => ({
+    value: code,
+    label: localeLabel(code as LocaleCode),
+  })),
+  { value: "xx-pirate", label: "Pirate English (custom, via registerLocale)" },
+];
+
+function localeLabel(code: LocaleCode): string {
+  const names: Record<LocaleCode, string> = {
+    en: "English",
+    es: "Spanish",
+    fr: "French",
+    de: "German",
+    it: "Italian",
+    "zh-Hans": "Chinese (Simplified)",
+    "zh-Hant": "Chinese (Traditional)",
+  };
+  return names[code];
+}
+
 export function App() {
   const [configured, setConfigured] = useState<boolean | null>(null);
+  // `auto` = let the dialog detect from the browser language; otherwise
+  // the selected code is passed straight to `locale`.
+  const [locale, setLocale] = useState<string>("auto");
+  // Toggle a per-render `strings` override so the "override individual
+  // strings" path is also live in the demo.
+  const [overrideButton, setOverrideButton] = useState(false);
+
+  const detected = useMemo(() => detectLocale(), []);
 
   useEffect(() => {
     setConfigured(Boolean(import.meta.env.VITE_STRIPE_PUBLIC_KEY));
   }, []);
+
+  const stringsOverride = overrideButton
+    ? { button: "Support this project 💛" }
+    : undefined;
+  const localeProp = locale === "auto" ? undefined : locale;
 
   return (
     <main className="page">
@@ -53,13 +119,66 @@ export function App() {
           card entry.
         </p>
         <div className="card-actions">
-          <DonateButton />
-          <DonateButton variant="default" />
-          <DonateButton iconOnly aria-label="Donate" />
+          <DonateButton locale={localeProp} strings={stringsOverride} />
+          <DonateButton
+            variant="default"
+            locale={localeProp}
+            strings={stringsOverride}
+          />
+          <DonateButton
+            iconOnly
+            aria-label="Donate"
+            locale={localeProp}
+            strings={stringsOverride}
+          />
         </div>
         <p className="hint">
           Supported currencies: <strong>{supportedCurrencies}</strong>. The
           suggested currency is detected from your browser timezone.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>i18n</h2>
+        <p>
+          The package ships built-in translations for English, Spanish, French,
+          German, Italian, and Simplified / Traditional Chinese. Leave the
+          selector on <code>auto</code> to detect from the browser language
+          (your browser reports <strong>{detected}</strong>), or pick one to
+          force it.
+        </p>
+        <label className="field-row">
+          <span>Locale</span>
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+            className="select"
+          >
+            <option value="auto">auto (browser — detected {detected})</option>
+            {LOCALE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-row">
+          <input
+            type="checkbox"
+            checked={overrideButton}
+            onChange={(e) => setOverrideButton(e.target.checked)}
+          />
+          <span>
+            Override the button label per-render via the <code>strings</code>{" "}
+            prop
+          </span>
+        </label>
+        <p className="hint">
+          The <strong>Pirate English</strong> entry is registered at module load
+          via <code>registerLocale()</code> — that's the “support another
+          language” path. The checkbox demonstrates the “override individual
+          strings” path (a partial <code>strings</code> prop merged on top of
+          the resolved locale).
         </p>
       </section>
 

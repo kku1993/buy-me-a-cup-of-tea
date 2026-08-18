@@ -31,11 +31,22 @@ export {
 } from "./donate";
 
 export {
+  BUNDLED_LOCALES,
   DEFAULT_DONATION_STRINGS,
+  detectLocale,
   formatTemplate,
+  getStringsForLocale,
+  registerLocale,
   resolveStrings,
+  unregisterLocale,
   type DonationStrings,
+  type LocaleCode,
+  type ResolveStringsOptions,
 } from "./strings";
+
+// Individual locale bundles — import these to inspect or diff a translation,
+// or to spread into a custom bundle passed to `registerLocale`.
+export { de, en, es, fr, it, zhHant, zhHans } from "./locales";
 
 export type { DonationCurrencyConfig } from "./currency";
 
