@@ -29,16 +29,20 @@ interface DonationConfig {
   stripePublishableKey?: string;
   /** Origin (scheme + host [+ port]) of the backend that mints
    *  PaymentIntents, e.g. `http://localhost:8787`. The dialog POSTs to
-   *  `${apiOrigin}/v1/donations/payment-intent`. */
-  apiOrigin: string;
+   *  `${apiOrigin}/v1/donations/payment-intent`. An empty string is a
+   *  valid value meaning "same-origin" — the request uses a relative URL,
+   *  useful when a dev proxy (or a co-located backend) serves `/v1/...`
+   *  on the same origin as the page. `undefined` (the unset default)
+   *  means `configureDonation()` has not been called yet. */
+  apiOrigin?: string;
 }
 
-const config: DonationConfig = { apiOrigin: "" };
+const config: DonationConfig = {};
 
 /** Sets the runtime configuration for the donate dialog. Call once at app
  *  boot, before rendering any donate UI. */
 export function configureDonation(
-  next: Partial<DonationConfig> & Pick<DonationConfig, "apiOrigin">,
+  next: Partial<DonationConfig> & { apiOrigin: string },
 ): void {
   if (next.stripePublishableKey !== undefined) {
     config.stripePublishableKey = next.stripePublishableKey;
@@ -124,7 +128,7 @@ export async function createDonationIntent(
   amount: number,
   currency: string,
 ): Promise<string> {
-  if (!config.apiOrigin) {
+  if (config.apiOrigin === undefined) {
     throw new DonationError(
       "Donation backend origin is not configured. Call configureDonation() first.",
     );
