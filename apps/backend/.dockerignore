@@ -1,0 +1,9 @@
+# Build artifacts
+backend
+*.exe
+
+# Local env (never bake secrets into the image)
+.env
+
+# Editor / OS cruft
+.DS_Store

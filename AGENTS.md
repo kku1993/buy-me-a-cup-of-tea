@@ -114,7 +114,9 @@ PaymentIntent so the Stripe `PaymentElement` renders. CORS is
 configurable via `ALLOWED_ORIGIN`. Env: `STRIPE_SECRET_KEY` (required),
 `PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`). The backend
 auto-loads `apps/backend/.env` at startup (existing env vars win), so
-`go run .` / `npm run dev` pick up keys without a wrapper script.
+`go run .` / `npm run dev` pick up keys without a wrapper script. Ships
+with a multi-stage `Dockerfile` (static binary on `scratch`, ~2.6 MB;
+copies the CA bundle so Stripe TLS works; runs as UID 65532).
 
 ## Core invariants (do not break)
 

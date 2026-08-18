@@ -172,3 +172,20 @@ Go backend:
 ```sh
 cd apps/backend && go build ./... && go vet ./...
 ```
+
+### Docker
+
+The backend ships with a multi-stage `Dockerfile` that builds a fully
+static binary (no cgo, no glibc) and runs it on `scratch` — the final
+image is ~2.6 MB. The system CA bundle is copied in so Stripe TLS
+verification works.
+
+```sh
+cd apps/backend
+docker build -t donate-backend .
+docker run --rm -p 8787:8787 -e STRIPE_SECRET_KEY=sk_test_... donate-backend
+```
+
+The container runs as a non-root user (UID 65532). Configure with the
+same env vars as the bare binary (`STRIPE_SECRET_KEY`, `PORT`,
+`ALLOWED_ORIGIN`); pass `-e` flags or mount an `.env` file.
