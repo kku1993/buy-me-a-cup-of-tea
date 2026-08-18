@@ -1,0 +1,28 @@
+{
+  "name": "demo-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --clearScreen false",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "eslint \"src/**/*.ts\" \"src/**/*.tsx\"",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/donation-dialog": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^8.57.0",
+    "typescript": "5.5.4",
+    "vite": "^5.4.0"
+  }
+}

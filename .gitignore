@@ -9,3 +9,7 @@ dist-ssr
 .cache
 server/dist
 public/dist
+
+# Go build artifacts
+apps/backend/backend
+apps/backend/*.exe
