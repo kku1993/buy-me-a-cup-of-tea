@@ -5,7 +5,7 @@ export const es: DonationStrings = {
   button: "Invítame a un té",
   title: "Invítame a un té",
   description:
-    "Si te ha gustado, considera invitarme a un té. Cada taza me mantiene preparando té. ¡Gracias!",
+    "Si te gusta esta aplicación, considera invitarme a un té. Tu apoyo ayuda a cubrir costes y a mantener mis proyectos. ¡Gracias!",
   unavailable:
     "Las donaciones no están disponibles en este momento. Inténtalo de nuevo más tarde.",
   currencyLabel: "Moneda",

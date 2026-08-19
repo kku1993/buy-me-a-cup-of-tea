@@ -5,7 +5,7 @@ export const it: DonationStrings = {
   button: "Offrimi un tè",
   title: "Offrimi un tè",
   description:
-    "Se ti è piaciuto, considera di offrirmi un tè. Ogni tazza mi tiene a preparare il tè. Grazie!",
+    "Se ti piace questa applicazione, considera di offrirmi un tè. Il tuo sostegno mi aiuta a coprire i costi e a portare avanti i miei progetti. Grazie!",
   unavailable:
     "Le donazioni non sono disponibili al momento. Riprova più tardi.",
   currencyLabel: "Valuta",

@@ -4,7 +4,7 @@ import type { DonationStrings } from "../strings";
 export const zhHans: DonationStrings = {
   button: "请我喝杯茶",
   title: "请我喝杯茶",
-  description: "如果你喜欢，不妨请我喝杯茶。每一杯茶都能让我继续泡茶。谢谢你！",
+  description: "如果你喜欢这个应用，不妨请我喝杯茶。你的支持有助于分担开支，让我能继续开发更多功能。谢谢你！",
   unavailable: "目前无法接受捐款，请稍后再试。",
   currencyLabel: "货币",
   presetOne: "一口",

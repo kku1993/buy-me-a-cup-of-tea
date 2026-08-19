@@ -5,7 +5,7 @@ export const de: DonationStrings = {
   button: "Laden Sie mich auf einen Tee ein",
   title: "Laden Sie mich auf einen Tee ein",
   description:
-    "Wenn es Ihnen gefallen hat, laden Sie mich auf einen Tee ein. Jede Tasse hält mich am Brühen. Vielen Dank!",
+    "Wenn Ihnen diese Anwendung gefällt, laden Sie mich auf einen Tee ein. Ihre Unterstützung hilft, Kosten zu decken und meine Projekte am Laufen zu halten. Vielen Dank!",
   unavailable:
     "Spenden sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.",
   currencyLabel: "Währung",

@@ -4,7 +4,7 @@ import type { DonationStrings } from "../strings";
 export const zhHant: DonationStrings = {
   button: "請我喝杯茶",
   title: "請我喝杯茶",
-  description: "如果你喜歡，不妨請我喝杯茶。每一杯茶都能讓我繼續泡茶。謝謝你！",
+  description: "如果你喜歡這個應用程式，不妨請我喝杯茶。你的支持有助於分擔開支，讓我能繼續開發更多功能。謝謝你！",
   unavailable: "目前無法接受捐款，請稍後再試。",
   currencyLabel: "貨幣",
   presetOne: "一口",
