@@ -119,6 +119,36 @@ export function detectCurrencyFromTimezone(): string {
   return DEFAULT_DONATION_CURRENCY;
 }
 
+/** The metadata key under which the originating page's domain is
+ *  recorded on the PaymentIntent, so donations can be attributed to the
+ *  site that collected them in the Stripe dashboard / webhooks. Callers
+ *  can override this by passing their own `host` entry in `metadata`. */
+const HOST_METADATA_KEY = "host";
+
+/** Returns a metadata map with the current page's domain recorded under
+ *  the `host` key. If `metadata` already supplies a `host`, the caller's
+ *  value is preserved unchanged. If the domain can't be determined (e.g.
+ *  a non-browser environment such as SSR or a test harness without
+ *  `window`), `metadata` is returned as-is so the request still
+ *  succeeds. Returns `undefined` when the merged map would be empty, so
+ *  the JSON body omits the field entirely and the backend skips
+ *  metadata validation. */
+function withHostMetadata(
+  metadata: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (metadata?.[HOST_METADATA_KEY] !== undefined) {
+    return metadata;
+  }
+  let hostname: string | undefined;
+  try {
+    hostname = window?.location?.hostname;
+  } catch {
+    // `window` may be undefined in non-browser runtimes — skip silently.
+  }
+  if (!hostname) return metadata;
+  return { ...metadata, [HOST_METADATA_KEY]: hostname };
+}
+
 /** Creates a Stripe PaymentIntent for the given amount and currency, and
  *  returns its client secret. Unauthenticated — donations don't require
  *  an account. `amount` is the raw major-unit amount the user entered
@@ -130,7 +160,13 @@ export function detectCurrencyFromTimezone(): string {
  *  "summer-2026", "page": "footer"}`). It is forwarded verbatim to the
  *  backend, which sets it on the PaymentIntent. Stripe limits metadata
  *  to 50 keys, 40-char key names, and 500-char values; the backend
- *  validates those limits. */
+ *  validates those limits.
+ *
+ *  A `host` metadata field is auto-populated from the page's current
+ *  domain (`window.location.hostname`) so donations can be attributed to
+ *  the originating site without the consumer wiring it up. If `metadata`
+ *  already contains a `host` key, the caller's value wins and is
+ *  forwarded untouched. */
 export async function createDonationIntent(
   amount: number,
   currency: string,
@@ -141,12 +177,13 @@ export async function createDonationIntent(
       "Donation backend origin is not configured. Call configureDonation() first.",
     );
   }
+  const mergedMetadata = withHostMetadata(metadata);
   const response = await fetch(
     `${config.apiOrigin}/v1/donations/payment-intent`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ amount, currency, metadata }),
+      body: JSON.stringify({ amount, currency, metadata: mergedMetadata }),
     },
   );
   if (!response.ok) {

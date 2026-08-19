@@ -157,7 +157,9 @@ function DonateDialogContent({
   /** Arbitrary string tags attached to the resulting Stripe payment as
    *  PaymentIntent metadata (e.g. `{"campaign": "summer-2026"}`). Useful
    *  for attributing donations to a placement, page, or campaign in the
-   *  Stripe dashboard. Forwarded verbatim to the backend. */
+   *  Stripe dashboard. Forwarded verbatim to the backend. A `host` key
+   *  is auto-populated from the page's current domain unless `metadata`
+   *  already supplies one. */
   metadata?: Record<string, string>;
 }) {
   const strings = resolveStrings({ locale, strings: stringsOverride });
@@ -380,7 +382,9 @@ export interface DonateButtonProps {
    *  or campaign in the Stripe dashboard. Forwarded verbatim to the
    *  backend, which sets it on the PaymentIntent. Stripe limits metadata
    *  to 50 keys, 40-char key names, and 500-char values; the backend
-   *  validates those limits and returns an error if exceeded. */
+   *  validates those limits and returns an error if exceeded. A `host`
+   *  key is auto-populated from the page's current domain unless
+   *  `metadata` already supplies one. */
   metadata?: Record<string, string>;
 }
 
