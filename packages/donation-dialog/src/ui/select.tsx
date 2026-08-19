@@ -3,6 +3,7 @@ import {
   Group as SelectPrimitiveGroup,
   Item as SelectPrimitiveItem,
   ItemIndicator as SelectPrimitiveItemIndicator,
+  ItemText as SelectPrimitiveItemText,
   Portal as SelectPrimitivePortal,
   Root as SelectPrimitiveRoot,
   Trigger as SelectPrimitiveTrigger,
@@ -100,7 +101,9 @@ export function SelectItem({
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </SelectPrimitiveItemIndicator>
-      <span className="dd-select-item-text">{children}</span>
+      <SelectPrimitiveItemText className="dd-select-item-text">
+        {children}
+      </SelectPrimitiveItemText>
     </SelectPrimitiveItem>
   );
 }
