@@ -17,7 +17,12 @@
 //	                    platforms; leave unset for a standalone account
 //	PORT                (optional, default 8888)
 //	ALLOWED_ORIGIN      (optional, default "*" — set to your frontend origin
-//	                    in production to lock down CORS)
+//	                    in production to lock down CORS. Accepts a literal
+//	                    "*" (any origin), an exact origin
+//	                    ("https://app.example.com"), or a wildcard subdomain
+//	                    pattern ("https://*.example.com" or "*.example.com")
+//	                    that matches any subdomain of the given domain but not
+//	                    the bare domain itself.)
 package main
 
 import (
@@ -27,6 +32,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -206,15 +212,40 @@ func handlePaymentIntent(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// cors wraps a handler with permissive CORS. In production set
-// ALLOWED_ORIGIN to the frontend origin instead of leaving it open.
+// cors wraps a handler with CORS support. ALLOWED_ORIGIN may be:
+//   - "*" (default): allow any origin; the literal "*" is sent back.
+//   - an exact origin ("https://app.example.com"): only that origin is
+//     reflected back.
+//   - a wildcard subdomain pattern ("https://*.example.com" or
+//     "*.example.com"): any subdomain of the given domain is reflected
+//     back. The bare domain itself ("example.com") is NOT matched — at
+//     least one subdomain label is required. When a scheme (or port) is
+//     given on the pattern, the request origin's scheme (or port) must
+//     match; omitting them makes them unconstrained.
+//
+// When the reflected value depends on the request's Origin header (i.e.
+// anything other than the literal "*"), a "Vary: Origin" header is added
+// so caches don't serve one origin's response to another.
 func cors(next http.Handler) http.Handler {
 	allowed := os.Getenv("ALLOWED_ORIGIN")
 	if allowed == "" {
 		allowed = "*"
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("access-control-allow-origin", allowed)
+		origin := r.Header.Get("Origin")
+		var allowOrigin string
+		switch {
+		case allowed == "*":
+			allowOrigin = "*"
+		case origin != "" && originMatches(allowed, origin):
+			allowOrigin = origin
+		}
+		if allowOrigin != "" {
+			w.Header().Set("access-control-allow-origin", allowOrigin)
+			if allowOrigin != "*" {
+				w.Header().Add("vary", "Origin")
+			}
+		}
 		w.Header().Set("access-control-allow-methods", "POST, OPTIONS")
 		w.Header().Set("access-control-allow-headers", "content-type")
 		if r.Method == http.MethodOptions {
@@ -223,6 +254,64 @@ func cors(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// originMatches reports whether the request origin is permitted by the
+// configured ALLOWED_ORIGIN value. See the cors doc comment for the
+// accepted forms. The wildcard form requires at least one subdomain
+// label between the "*" and the apex domain (so "*.example.com" does
+// not match "https://example.com").
+func originMatches(allowed, origin string) bool {
+	if allowed == "*" || allowed == origin {
+		return true
+	}
+	// Only wildcard patterns contain "*.".
+	if !strings.Contains(allowed, "*.") {
+		return false
+	}
+
+	// Split the pattern into scheme/host parts. A pattern without "://"
+	// (e.g. "*.example.com") is treated as host-only: scheme and port on
+	// the request origin are unconstrained.
+	allowedScheme := ""
+	allowedHost := allowed
+	if i := strings.Index(allowed, "://"); i >= 0 {
+		allowedScheme = allowed[:i]
+		allowedHost = allowed[i+3:]
+	}
+	if !strings.HasPrefix(allowedHost, "*.") {
+		// The "*." wasn't in the host component (e.g. a path wildcard);
+		// not a form we support.
+		return false
+	}
+	// allowedHost may also pin a port: "*.example.com:8443".
+	allowedPort := ""
+	if i := strings.Index(allowedHost, ":"); i >= 0 {
+		allowedPort = allowedHost[i+1:]
+		allowedHost = allowedHost[:i]
+	}
+	suffix := allowedHost[1:] // ".example.com"
+
+	originURL, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	originHost := originURL.Hostname()
+	if !strings.HasSuffix(originHost, suffix) {
+		return false
+	}
+	// Require at least one subdomain label; the apex domain itself is
+	// not a match for "*.example.com".
+	if originHost == suffix[1:] { // "example.com"
+		return false
+	}
+	if allowedScheme != "" && allowedScheme != originURL.Scheme {
+		return false
+	}
+	if allowedPort != "" && allowedPort != originURL.Port() {
+		return false
+	}
+	return true
 }
 
 func main() {
