@@ -20,7 +20,11 @@ import {
 //   the dialog shows its "unavailable" state instead of crashing — handy
 //   for kicking the tires without a Stripe account.
 configureDonation({
-  apiOrigin: "",
+  // In dev the Vite proxy forwards same-origin `/v1/...` to the Go backend
+  // on :8787, so an empty origin (relative URL) works. In production builds
+  // `VITE_API_ORIGIN` is defined (see vite.config.ts) to the deployed
+  // backend origin, so the bundle talks to it directly.
+  apiOrigin: (import.meta.env.VITE_API_ORIGIN as string | undefined) ?? "",
   stripePublishableKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY as
     string | undefined,
 });
