@@ -93,31 +93,19 @@ displays in 0), min/max bounds, and three preset amounts.
 
 ## Backend deployment
 
-The dialog needs a backend that mints Stripe PaymentIntents. It POSTs to
-`${apiOrigin}/v1/donations/payment-intent`:
+The dialog needs a backend that mints Stripe PaymentIntents.
 
-```http
-POST /v1/donations/payment-intent
-content-type: application/json
+The simplest way to get started is to use our pre-built docker container
 
-{"amount": 5, "currency": "USD"}
+```bash
+docker pull kku1993/buy-me-a-cup-of-tea:latest
 ```
 
-```http
-200 OK
-{"data": {"clientSecret": "pi_..._secret_..."}}
-```
-
-```http
-400 Bad Request
-{"message": "Amount must be at least $0.50 USD"}
-```
-
-`amount` is in major units (dollars/yen); the backend converts to Stripe
-minor units. You can implement this endpoint yourself in any language,
-or deploy the reference Go backend included in this repo
-(`apps/backend`) — see [DEVELOP.md](./DEVELOP.md) for build, Docker, and
-deployment details. The backend requires a `STRIPE_SECRET_KEY`
+The backend requires a `STRIPE_SECRET_KEY`
 (server only — never expose it to the browser) and optionally
 `STRIPE_ACCOUNT_ID` (Stripe Connect), `PORT` (default 8787), and
 `ALLOWED_ORIGIN` (CORS, default `*`).
+
+You can also build the Go backend included in this repo
+(`apps/backend`) — see [DEVELOP.md](./DEVELOP.md) for build, Docker, and
+deployment details.
