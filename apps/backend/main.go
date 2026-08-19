@@ -111,9 +111,41 @@ func toStripeMinorUnits(amount float64, cfg currencyConfig) int64 {
 	return int64(math.Round(amount * math.Pow10(cfg.Decimals)))
 }
 
+// Stripe metadata limits, per
+// https://docs.stripe.com/api/metadata. Validated up front so the caller
+// gets a clear 400 instead of a generic Stripe API error.
+const (
+	maxMetadataKeys        = 50
+	maxMetadataKeyLength   = 40
+	maxMetadataValueLength = 500
+)
+
+// validateMetadata enforces Stripe's PaymentIntent metadata limits: at
+// most 50 keys, key names up to 40 characters, values up to 500
+// characters. Empty keys are rejected. Returns a descriptive error the
+// handler forwards to the client.
+func validateMetadata(m map[string]string) error {
+	if len(m) > maxMetadataKeys {
+		return errors.New("metadata may contain at most " + strconv.Itoa(maxMetadataKeys) + " keys")
+	}
+	for k, v := range m {
+		if k == "" {
+			return errors.New("metadata keys must not be empty")
+		}
+		if len(k) > maxMetadataKeyLength {
+			return errors.New("metadata key exceeds " + strconv.Itoa(maxMetadataKeyLength) + " characters: " + k)
+		}
+		if len(v) > maxMetadataValueLength {
+			return errors.New("metadata value for key \"" + k + "\" exceeds " + strconv.Itoa(maxMetadataValueLength) + " characters")
+		}
+	}
+	return nil
+}
+
 type paymentIntentRequest struct {
-	Amount   float64 `json:"amount"`
-	Currency string  `json:"currency"`
+	Amount   float64           `json:"amount"`
+	Currency string            `json:"currency"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 type errorResponse struct {
@@ -184,6 +216,18 @@ func handlePaymentIntent(w http.ResponseWriter, r *http.Request) {
 		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
 			Enabled: stripe.Bool(true),
 		},
+	}
+	// Attach caller-supplied metadata (arbitrary string tags) to the
+	// PaymentIntent so donations can be attributed to a campaign, page,
+	// placement, etc. in the Stripe dashboard. Stripe enforces its own
+	// limits too, but we validate up front to return a clear 400 instead
+	// of a generic Stripe API failure.
+	if len(req.Metadata) > 0 {
+		if err := validateMetadata(req.Metadata); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		params.Metadata = req.Metadata
 	}
 	// Stripe Connect platforms act on behalf of a connected account by
 	// setting the Stripe-Account header. For a standalone (non-Connect)

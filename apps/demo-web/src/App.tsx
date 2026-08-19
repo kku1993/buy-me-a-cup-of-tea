@@ -133,6 +133,10 @@ export function App() {
             locale={localeProp}
             strings={stringsOverride}
             themeColor={themeColorProp}
+            metadata={{
+              campaign: "demo-web",
+              placement: "primary",
+            }}
           />
           <DonateButton
             iconOnly
@@ -239,6 +243,19 @@ export function App() {
           language” path. The checkbox demonstrates the “override individual
           strings” path (a partial <code>strings</code> prop merged on top of
           the resolved locale).
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Metadata</h2>
+        <p>
+          Pass a <code>metadata</code> record to attach arbitrary string tags to
+          the resulting Stripe payment (visible in the Stripe dashboard /
+          webhooks). Useful for attributing donations to a campaign, page, or
+          placement. The primary button above sends{" "}
+          <code>{'{ campaign: "demo-web", placement: "primary" }'}</code>. The
+          backend forwards it to the PaymentIntent and validates Stripe's limits
+          (≤50 keys, 40-char key names, 500-char values).
         </p>
       </section>
 

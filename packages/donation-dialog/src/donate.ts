@@ -123,10 +123,18 @@ export function detectCurrencyFromTimezone(): string {
  *  returns its client secret. Unauthenticated — donations don't require
  *  an account. `amount` is the raw major-unit amount the user entered
  *  (e.g. 200 for 200 NTD, 3.5 for $3.50); the backend converts it to
- *  Stripe minor units using the currency's exponent. */
+ *  Stripe minor units using the currency's exponent.
+ *
+ *  `metadata` is an optional map of arbitrary string tags the site owner
+ *  wants attached to the resulting Stripe payment (e.g. `{"campaign":
+ *  "summer-2026", "page": "footer"}`). It is forwarded verbatim to the
+ *  backend, which sets it on the PaymentIntent. Stripe limits metadata
+ *  to 50 keys, 40-char key names, and 500-char values; the backend
+ *  validates those limits. */
 export async function createDonationIntent(
   amount: number,
   currency: string,
+  metadata?: Record<string, string>,
 ): Promise<string> {
   if (config.apiOrigin === undefined) {
     throw new DonationError(
@@ -138,7 +146,7 @@ export async function createDonationIntent(
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ amount, currency }),
+      body: JSON.stringify({ amount, currency, metadata }),
     },
   );
   if (!response.ok) {

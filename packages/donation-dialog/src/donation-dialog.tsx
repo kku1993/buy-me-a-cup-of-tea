@@ -141,6 +141,7 @@ function DonateDialogContent({
   locale,
   strings: stringsOverride,
   themeColor,
+  metadata,
 }: {
   onClose: () => void;
   /** Locale code (e.g. `"es"`, `"zh-Hant"`, or a custom code registered
@@ -153,6 +154,11 @@ function DonateDialogContent({
    *  buttons, focus rings, links, and the preset cup icons. Omit to
    *  keep the default purple. The hover shade is derived automatically. */
   themeColor?: string;
+  /** Arbitrary string tags attached to the resulting Stripe payment as
+   *  PaymentIntent metadata (e.g. `{"campaign": "summer-2026"}`). Useful
+   *  for attributing donations to a placement, page, or campaign in the
+   *  Stripe dashboard. Forwarded verbatim to the backend. */
+  metadata?: Record<string, string>;
 }) {
   const strings = resolveStrings({ locale, strings: stringsOverride });
   const [step, setStep] = useState<Step>({ kind: "amount" });
@@ -194,7 +200,11 @@ function DonateDialogContent({
     setLoading(true);
     setError(null);
     try {
-      const clientSecret = await createDonationIntent(amount, currency.code);
+      const clientSecret = await createDonationIntent(
+        amount,
+        currency.code,
+        metadata,
+      );
       setStep({ kind: "pay", amount, currency, clientSecret });
     } catch (err) {
       setError(err instanceof DonationError ? err.message : strings.error);
@@ -364,6 +374,14 @@ export interface DonateButtonProps {
    *  default purple (`#646cff`). The hover shade is derived automatically
    *  via `color-mix`. */
   themeColor?: string;
+  /** Arbitrary string tags attached to the resulting Stripe payment as
+   *  PaymentIntent metadata (e.g. `{"campaign": "summer-2026", "page":
+   *  "footer"}`). Useful for attributing donations to a placement, page,
+   *  or campaign in the Stripe dashboard. Forwarded verbatim to the
+   *  backend, which sets it on the PaymentIntent. Stripe limits metadata
+   *  to 50 keys, 40-char key names, and 500-char values; the backend
+   *  validates those limits and returns an error if exceeded. */
+  metadata?: Record<string, string>;
 }
 
 export function DonateButton({
@@ -374,6 +392,7 @@ export function DonateButton({
   locale,
   strings,
   themeColor,
+  metadata,
 }: DonateButtonProps) {
   const [open, setOpen] = useState(false);
 
@@ -401,6 +420,7 @@ export function DonateButton({
             locale={locale}
             strings={strings}
             themeColor={themeColor}
+            metadata={metadata}
           />
         </DialogContent>
       </Dialog>
