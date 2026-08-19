@@ -131,7 +131,10 @@ PaymentIntent so the Stripe `PaymentElement` renders. CORS is
 configurable via `ALLOWED_ORIGIN`. Env: `STRIPE_SECRET_KEY` (required),
 `STRIPE_ACCOUNT_ID` (optional — only for Stripe Connect platforms acting
 on behalf of a connected account; leave unset for a standalone account),
-`PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`). The backend
+`PORT` (default 8787), `ALLOWED_ORIGIN` (default `*`; accepts a literal
+`*`, an exact origin, a wildcard subdomain pattern, or a comma-separated
+list of any of those — a request matches if its Origin matches any
+entry, and a literal `*` anywhere disables origin checks). The backend
 auto-loads `apps/backend/.env` at startup (existing env vars win), so
 `go run .` / `npm run dev` pick up keys without a wrapper script. Ships
 with a multi-stage `Dockerfile` (static binary on `scratch`, ~2.6 MB;

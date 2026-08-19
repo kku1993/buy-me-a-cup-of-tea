@@ -164,3 +164,107 @@ func TestCORSPreflight(t *testing.T) {
 		t.Errorf("Access-Control-Allow-Methods = %q, want %q", got, "POST, OPTIONS")
 	}
 }
+
+// TestCORSMultipleOrigins covers the comma-separated ALLOWED_ORIGIN form:
+// a request is allowed if its Origin matches any entry, and a literal "*"
+// anywhere in the list disables all origin checks.
+func TestCORSMultipleOrigins(t *testing.T) {
+	cases := []struct {
+		name           string
+		allowedOrigin  string
+		requestOrigin  string
+		wantACAO       string
+		wantVaryOrigin bool
+	}{
+		{
+			name:           "two wildcard patterns, matches first",
+			allowedOrigin:  "https://*.example.com, https://*.abc.com",
+			requestOrigin:  "https://app.example.com",
+			wantACAO:       "https://app.example.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "two wildcard patterns, matches second",
+			allowedOrigin:  "https://*.example.com, https://*.abc.com",
+			requestOrigin:  "https://foo.abc.com",
+			wantACAO:       "https://foo.abc.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "two wildcard patterns, matches neither",
+			allowedOrigin:  "https://*.example.com, https://*.abc.com",
+			requestOrigin:  "https://evil.com",
+			wantACAO:       "",
+			wantVaryOrigin: false,
+		},
+		{
+			name:           "extra whitespace around entries is trimmed",
+			allowedOrigin:  "  https://*.example.com ,  https://*.abc.com  ",
+			requestOrigin:  "https://app.example.com",
+			wantACAO:       "https://app.example.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "exact origin plus wildcard pattern",
+			allowedOrigin:  "https://app.example.com, https://*.abc.com",
+			requestOrigin:  "https://app.example.com",
+			wantACAO:       "https://app.example.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "exact origin plus wildcard pattern, matches wildcard",
+			allowedOrigin:  "https://app.example.com, https://*.abc.com",
+			requestOrigin:  "https://sub.abc.com",
+			wantACAO:       "https://sub.abc.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "literal * anywhere disables origin checks",
+			allowedOrigin:  "https://*.example.com, *",
+			requestOrigin:  "https://evil.com",
+			wantACAO:       "*",
+			wantVaryOrigin: false,
+		},
+		{
+			name:           "trailing comma is ignored",
+			allowedOrigin:  "https://*.example.com,",
+			requestOrigin:  "https://app.example.com",
+			wantACAO:       "https://app.example.com",
+			wantVaryOrigin: true,
+		},
+		{
+			name:           "empty entries collapse to wildcard default",
+			allowedOrigin:  "   ,  ",
+			requestOrigin:  "https://anything.com",
+			wantACAO:       "*",
+			wantVaryOrigin: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("ALLOWED_ORIGIN", c.allowedOrigin)
+			handler := cors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			}))
+			req := httptest.NewRequest(http.MethodPost, "/v1/donations/payment-intent", nil)
+			if c.requestOrigin != "" {
+				req.Header.Set("Origin", c.requestOrigin)
+			}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			gotACAO := rec.Header().Get("Access-Control-Allow-Origin")
+			if gotACAO != c.wantACAO {
+				t.Errorf("Access-Control-Allow-Origin = %q, want %q", gotACAO, c.wantACAO)
+			}
+			hasVary := false
+			for _, v := range rec.Header().Values("Vary") {
+				if v == "Origin" {
+					hasVary = true
+				}
+			}
+			if hasVary != c.wantVaryOrigin {
+				t.Errorf("Vary contains Origin = %v, want %v", hasVary, c.wantVaryOrigin)
+			}
+		})
+	}
+}

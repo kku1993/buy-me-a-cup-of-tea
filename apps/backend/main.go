@@ -22,7 +22,12 @@
 //	                    ("https://app.example.com"), or a wildcard subdomain
 //	                    pattern ("https://*.example.com" or "*.example.com")
 //	                    that matches any subdomain of the given domain but not
-//	                    the bare domain itself.)
+//	                    the bare domain itself. Multiple values may be
+//	                    comma-separated, e.g.
+//	                    "https://*.example.com, https://*.abc.com" — a
+//	                    request is allowed if it matches any of them. A
+//	                    literal "*" anywhere in the list disables all
+//	                    origin checks.)
 package main
 
 import (
@@ -277,6 +282,12 @@ func handlePaymentIntent(w http.ResponseWriter, r *http.Request) {
 //     least one subdomain label is required. When a scheme (or port) is
 //     given on the pattern, the request origin's scheme (or port) must
 //     match; omitting them makes them unconstrained.
+//   - a comma-separated list of any of the above, e.g.
+//     "https://*.example.com, https://*.abc.com" — a request is allowed
+//     if its Origin matches any entry. Whitespace around each entry is
+//     trimmed. A literal "*" anywhere in the list disables all origin
+//     checks (the wildcard "*" is reflected back, just like the
+//     single-value form).
 //
 // When the reflected value depends on the request's Origin header (i.e.
 // anything other than the literal "*"), a "Vary: Origin" header is added
@@ -286,13 +297,21 @@ func cors(next http.Handler) http.Handler {
 	if allowed == "" {
 		allowed = "*"
 	}
+	allowedOrigins := parseAllowedOrigins(allowed)
+	allowAny := false
+	for _, o := range allowedOrigins {
+		if o == "*" {
+			allowAny = true
+			break
+		}
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		var allowOrigin string
 		switch {
-		case allowed == "*":
+		case allowAny:
 			allowOrigin = "*"
-		case origin != "" && originMatches(allowed, origin):
+		case origin != "" && originAllowed(allowedOrigins, origin):
 			allowOrigin = origin
 		}
 		if allowOrigin != "" {
@@ -309,6 +328,39 @@ func cors(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// parseAllowedOrigins splits a comma-separated ALLOWED_ORIGIN value into
+// individual origin patterns, trimming whitespace around each and dropping
+// empty entries. A value of "*" (or any list containing "*") is preserved
+// as a single "*" entry; the cors middleware treats a list containing "*"
+// as "allow any" via the allowAny flag, so callers should check that flag
+// rather than scanning the slice.
+func parseAllowedOrigins(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	if len(out) == 0 {
+		return []string{"*"}
+	}
+	return out
+}
+
+// originAllowed reports whether the request origin matches any of the
+// configured allowed-origin patterns. See originMatches for the accepted
+// pattern forms.
+func originAllowed(allowed []string, origin string) bool {
+	for _, a := range allowed {
+		if originMatches(a, origin) {
+			return true
+		}
+	}
+	return false
 }
 
 // originMatches reports whether the request origin is permitted by the
