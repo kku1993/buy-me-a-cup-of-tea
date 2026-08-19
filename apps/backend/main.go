@@ -456,6 +456,20 @@ func main() {
 	}
 	stripe.Key = secretKey
 
+	// STRIPE_API_BASE_URL (optional) overrides the Stripe API endpoint the
+	// SDK calls. Production deployments leave it unset (the SDK defaults to
+	// https://api.stripe.com). It's primarily useful for pointing the
+	// backend at a local mock during load/capacity testing so the backend's
+	// own resource ceiling can be measured without Stripe rate limits or
+	// latency as a confounding variable.
+	if baseURL := os.Getenv("STRIPE_API_BASE_URL"); baseURL != "" {
+		stripe.SetBackend(stripe.APIBackend, stripe.GetBackendWithConfig(
+			stripe.APIBackend,
+			&stripe.BackendConfig{URL: stripe.String(baseURL)},
+		))
+		log.Printf("using custom Stripe API base URL: %s", baseURL)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8888"
