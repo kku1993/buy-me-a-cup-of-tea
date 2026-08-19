@@ -141,7 +141,7 @@
 .dd-input:focus {
   outline: none;
   border-color: var(--dd-primary);
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dd-primary) 25%, transparent);
 }
 /* Hide the number input spinner for a cleaner look */
 .dd-input[type="number"]::-webkit-outer-spin-button,
@@ -283,7 +283,7 @@
 .dd-select-trigger:focus-visible {
   outline: none;
   border-color: var(--dd-primary);
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dd-primary) 25%, transparent);
 }
 .dd-select-trigger[data-placeholder] {
   color: var(--dd-text-muted);

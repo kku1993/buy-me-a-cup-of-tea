@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   Elements,
   PaymentElement,
@@ -46,6 +46,24 @@ type Step =
       clientSecret: string;
     }
   | { kind: "success" };
+
+/** Builds the inline CSS-variable style that re-themes the dialog (and
+ *  the trigger button) from a single user-supplied color. The dialog's
+ *  stylesheet reads `--dd-primary` / `--dd-primary-hover` for buttons,
+ *  focus rings, links, and the preset cup icons, so overriding those two
+ *  variables on the dialog root (and on the trigger button) is enough to
+ *  re-skin the whole thing. `--dd-primary-contrast` (the button text
+ *  color) is left at its default white. The hover shade is derived via
+ *  `color-mix` so consumers only have to pick one color. Returns
+ *  `undefined` when `themeColor` is unset so the defaults from `:root`
+ *  (purple) apply untouched. */
+function themeStyle(themeColor?: string): CSSProperties | undefined {
+  if (!themeColor) return undefined;
+  return {
+    "--dd-primary": themeColor,
+    "--dd-primary-hover": `color-mix(in srgb, ${themeColor}, #000 12%)`,
+  } as CSSProperties;
+}
 
 function CheckoutForm({
   amount,
@@ -122,6 +140,7 @@ function DonateDialogContent({
   onClose,
   locale,
   strings: stringsOverride,
+  themeColor,
 }: {
   onClose: () => void;
   /** Locale code (e.g. `"es"`, `"zh-Hant"`, or a custom code registered
@@ -130,6 +149,10 @@ function DonateDialogContent({
   locale?: string;
   /** Per-render overrides merged on top of the resolved locale's bundle. */
   strings?: Partial<DonationStrings>;
+  /** Theme color (any CSS color) for the dialog's primary accent —
+   *  buttons, focus rings, links, and the preset cup icons. Omit to
+   *  keep the default purple. The hover shade is derived automatically. */
+  themeColor?: string;
 }) {
   const strings = resolveStrings({ locale, strings: stringsOverride });
   const [step, setStep] = useState<Step>({ kind: "amount" });
@@ -219,7 +242,10 @@ function DonateDialogContent({
           stripe={getStripe()}
           options={{
             clientSecret: step.clientSecret,
-            appearance: { theme: "night" },
+            appearance: {
+              theme: "night",
+              variables: themeColor ? { colorPrimary: themeColor } : undefined,
+            },
           }}
         >
           <CheckoutForm
@@ -331,6 +357,13 @@ export interface DonateButtonProps {
    *  Only the keys you supply are replaced; the rest come from the locale
    *  (or the English fallback). */
   strings?: Partial<DonationStrings>;
+  /** Theme color (any CSS color string, e.g. `"#10b981"` or `"orange"`)
+   *  for the primary accent — the trigger button (when `variant="default"
+   *  or "settings-action"`), the dialog's buttons, focus rings, links, the
+   *  preset cup icons, and the Stripe Elements accent. Omit to keep the
+   *  default purple (`#646cff`). The hover shade is derived automatically
+   *  via `color-mix`. */
+  themeColor?: string;
 }
 
 export function DonateButton({
@@ -340,10 +373,12 @@ export function DonateButton({
   iconOnly,
   locale,
   strings,
+  themeColor,
 }: DonateButtonProps) {
   const [open, setOpen] = useState(false);
 
   const resolved = resolveStrings({ locale, strings });
+  const style = themeStyle(themeColor);
 
   return (
     <>
@@ -352,6 +387,7 @@ export function DonateButton({
         variant={variant}
         size={size ?? (iconOnly ? "icon-sm" : "default")}
         className={className}
+        style={style}
         onClick={() => setOpen(true)}
         aria-label={resolved.button}
       >
@@ -359,11 +395,12 @@ export function DonateButton({
         {iconOnly ? null : resolved.button}
       </Button>
       <Dialog open={open} onOpenChange={(next: boolean) => setOpen(next)}>
-        <DialogContent showClose className="dd-donate-dialog">
+        <DialogContent showClose className="dd-donate-dialog" style={style}>
           <DonateDialogContent
             onClose={() => setOpen(false)}
             locale={locale}
             strings={strings}
+            themeColor={themeColor}
           />
         </DialogContent>
       </Dialog>

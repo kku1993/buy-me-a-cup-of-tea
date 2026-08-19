@@ -86,6 +86,8 @@ export function App() {
   // Toggle a per-render `strings` override so the "override individual
   // strings" path is also live in the demo.
   const [overrideButton, setOverrideButton] = useState(false);
+  // Theme color picker — empty string means "default purple".
+  const [themeColor, setThemeColor] = useState<string>("");
 
   const detected = useMemo(() => detectLocale(), []);
 
@@ -97,6 +99,7 @@ export function App() {
     ? { button: "Support this project 💛" }
     : undefined;
   const localeProp = locale === "auto" ? undefined : locale;
+  const themeColorProp = themeColor || undefined;
 
   return (
     <main className="page">
@@ -120,22 +123,78 @@ export function App() {
           card entry.
         </p>
         <div className="card-actions">
-          <DonateButton locale={localeProp} strings={stringsOverride} />
+          <DonateButton
+            locale={localeProp}
+            strings={stringsOverride}
+            themeColor={themeColorProp}
+          />
           <DonateButton
             variant="default"
             locale={localeProp}
             strings={stringsOverride}
+            themeColor={themeColorProp}
           />
           <DonateButton
             iconOnly
             aria-label="Donate"
             locale={localeProp}
             strings={stringsOverride}
+            themeColor={themeColorProp}
           />
         </div>
         <p className="hint">
           Supported currencies: <strong>{supportedCurrencies}</strong>. The
           suggested currency is detected from your browser timezone.
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Theme color</h2>
+        <p>
+          The dialog's primary accent defaults to purple (<code>#646cff</code>).
+          Pass any CSS color to the <code>themeColor</code> prop to re-skin the
+          trigger button, the dialog's buttons, focus rings, links, the preset
+          cup icons, and the Stripe Elements accent. The hover shade is derived
+          automatically.
+        </p>
+        <label className="field-row">
+          <span>Theme color</span>
+          <input
+            type="color"
+            value={themeColor || "#646cff"}
+            onChange={(e) => setThemeColor(e.target.value)}
+            className="color-picker"
+            aria-label="Theme color"
+          />
+          <button
+            type="button"
+            className="select"
+            onClick={() => setThemeColor("")}
+          >
+            Reset to default
+          </button>
+        </label>
+        <div className="swatches">
+          {[
+            "#646cff",
+            "#10b981",
+            "#f97316",
+            "#ec4899",
+            "#0ea5e9",
+            "#eab308",
+          ].map((c) => (
+            <button
+              key={c}
+              type="button"
+              className="swatch"
+              style={{ backgroundColor: c }}
+              aria-label={`Use ${c}`}
+              onClick={() => setThemeColor(c)}
+            />
+          ))}
+        </div>
+        <p className="hint">
+          Current: <strong>{themeColor || "default (purple #646cff)"}</strong>
         </p>
       </section>
 

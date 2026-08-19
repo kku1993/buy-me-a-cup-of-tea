@@ -8,7 +8,7 @@ import {
   Title as DialogPrimitiveTitle,
   Trigger as DialogPrimitiveTrigger,
 } from "@radix-ui/react-dialog";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import clsx from "clsx";
 
 // Note: ReactNode is imported as a named type (not the React.* namespace)
@@ -22,15 +22,20 @@ export function DialogContent({
   className,
   children,
   showClose = true,
+  style,
 }: {
   className?: string;
   children: ReactNode;
   showClose?: boolean;
+  style?: CSSProperties;
 }) {
   return (
     <DialogPrimitivePortal>
       <DialogPrimitiveOverlay className="dd-dialog-overlay" />
-      <DialogPrimitiveContent className={clsx("dd-dialog-content", className)}>
+      <DialogPrimitiveContent
+        className={clsx("dd-dialog-content", className)}
+        style={style}
+      >
         {children}
         {showClose ? (
           <DialogPrimitiveClose className="dd-dialog-close" aria-label="Close">
