@@ -1,0 +1,26 @@
+# Build context for `docker build -f apps/backend/Dockerfile .` (repo root).
+# Keeps secrets and build artifacts out of the image and shrinks context
+# upload. The Dockerfile only COPYs apps/backend/, VERSION, and
+# packages/donation-dialog/package.json, so this mainly guards against
+# accidentally baking apps/backend/.env or a stale `backend` binary in.
+
+# Node / build artifacts
+**/node_modules
+**/dist
+**/.turbo
+**/.cache
+
+# Local env (never bake secrets into the image)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Go build artifacts
+apps/backend/backend
+**/*.exe
+
+# Editor / OS cruft
+.DS_Store
+**/.DS_Store
+.git
+.gitignore

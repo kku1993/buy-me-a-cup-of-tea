@@ -181,10 +181,15 @@ image is ~2.6 MB. The system CA bundle is copied in so Stripe TLS
 verification works.
 
 ```sh
-cd apps/backend
-docker build -t donate-backend .
+docker build -t donate-backend -f apps/backend/Dockerfile .
 docker run --rm -p 8787:8787 -e STRIPE_SECRET_KEY=sk_test_... donate-backend
 ```
+
+The build context is the **repo root** (not `apps/backend/`) so the
+Dockerfile can read the `VERSION` file and
+`packages/donation-dialog/package.json`, verify they match, and stamp the
+version into the binary (see `--version` and the `X-Tea-Version` response
+header). Run the command above from the repo root.
 
 The container runs as a non-root user (UID 65532). Configure with the
 same env vars as the bare binary (`STRIPE_SECRET_KEY`, `PORT`,

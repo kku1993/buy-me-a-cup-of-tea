@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "go run .",
-    "build": "go build -o backend .",
+    "dev": "V=$(node scripts/version.js) && go run -ldflags=\"-X main.version=$V\" .",
+    "build": "V=$(node scripts/version.js) && go build -ldflags=\"-X main.version=$V\" -o backend .",
     "lint": "go vet ./..."
   }
 }

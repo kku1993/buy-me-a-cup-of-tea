@@ -29,6 +29,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -40,6 +42,15 @@ import (
 	stripe "github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/paymentintent"
 )
+
+// version is the backend's version string. It is stamped into the binary
+// at build time via -ldflags "-X main.version=..." (see the package's
+// build/dev scripts and the Dockerfile). The value is kept in lockstep
+// with the donation-dialog package version in
+// packages/donation-dialog/package.json — the build verifies they match
+// and refuses to compile otherwise. When unset (e.g. `go run .` without
+// ldflags) it falls back to "dev".
+var version = "dev"
 
 // loadDotEnv reads a `.env` file from the working directory and sets any
 // unset environment variables from it. Existing env vars win (so explicit
@@ -358,7 +369,30 @@ func originMatches(allowed, origin string) bool {
 	return true
 }
 
+// versionHeader sets the `X-Tea-Version` response header to the stamped
+// binary version on every response (including CORS preflight and errors),
+// so consumers can tell which version of the backend they're talking to.
+// It is the outermost middleware so the header is present even when an
+// inner handler short-circuits (e.g. CORS OPTIONS or a 404).
+func versionHeader(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("x-tea-version", version)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
+	// --version prints the stamped version and exits. The flag is parsed
+	// before loading .env / requiring STRIPE_SECRET_KEY so it works on a
+	// bare machine with no config (useful for `docker run --rm img
+	// --version` and release smoke-checks).
+	showVersion := flag.Bool("version", false, "print the backend version and exit")
+	flag.Parse()
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
+
 	// Load `.env` from the working directory so `go run .` (and the
 	// `npm run dev` task) pick up STRIPE_SECRET_KEY / PORT / ALLOWED_ORIGIN
 	// without a wrapper script. Real env vars take precedence.
@@ -383,8 +417,8 @@ func main() {
 	})
 
 	addr := ":" + port
-	log.Printf("donation backend listening on %s", addr)
-	if err := http.ListenAndServe(addr, cors(mux)); err != nil {
+	log.Printf("donation backend listening on %s (version %s)", addr, version)
+	if err := http.ListenAndServe(addr, versionHeader(cors(mux))); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

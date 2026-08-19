@@ -163,6 +163,16 @@ copies the CA bundle so Stripe TLS works; runs as UID 65532).
 6. **Graceful unavailable state**: when `stripePublishableKey` is unset,
    the dialog shows an "unavailable" state instead of crashing. Preserve
    this — it lets consumers kick the tires without a Stripe account.
+7. **Version parity**: the repo-root `VERSION` file, the backend binary
+   (stamped via `-ldflags "-X main.version=..."` and exposed via
+   `--version` + the `X-Tea-Version` response header), and
+   `packages/donation-dialog/package.json`'s `version` field must all
+   agree. The backend `build`/`dev` scripts (via
+   `apps/backend/scripts/version.js`) and the `Dockerfile` both verify
+   `VERSION` == `package.json` version and fail the build on drift. When
+   bumping the donation-dialog version (`npm version patch`/`minor`/
+   `major` in the package dir), also update the root `VERSION` file to
+   match.
 
 ## i18n rules
 
