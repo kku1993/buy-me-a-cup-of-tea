@@ -1,6 +1,6 @@
 {
   "name": "@kku1993/buy-me-a-cup-of-tea",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "main": "./dist/donation-dialog.js",
@@ -13,7 +13,10 @@
     },
     "./styles.css": "./dist/style.css"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
