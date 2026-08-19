@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "V=$(node scripts/version.js) && go run -ldflags=\"-X main.version=$V\" .",
     "build": "V=$(node scripts/version.js) && go build -ldflags=\"-X main.version=$V\" -o backend .",
-    "lint": "go vet ./..."
+    "lint": "go vet ./...",
+    "docker:build": "V=$(node scripts/version.js) && docker build -t kku1993/buy-me-a-cup-of-tea:$V -t kku1993/buy-me-a-cup-of-tea:latest -f Dockerfile ../..",
+    "docker:publish": "V=$(node scripts/version.js) && docker build -t kku1993/buy-me-a-cup-of-tea:$V -t kku1993/buy-me-a-cup-of-tea:latest -f Dockerfile ../.. && docker push kku1993/buy-me-a-cup-of-tea:$V && docker push kku1993/buy-me-a-cup-of-tea:latest"
   }
 }
