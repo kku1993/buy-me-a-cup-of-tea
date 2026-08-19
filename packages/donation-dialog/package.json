@@ -1,6 +1,6 @@
 {
   "name": "@kku1993/buy-me-a-cup-of-tea",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "type": "module",
   "main": "./dist/donation-dialog.js",
